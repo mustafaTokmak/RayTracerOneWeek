@@ -14,8 +14,10 @@
 #include <fstream>
 #include <string>
 #include <iostream>
+#include <string.h>
 
 
+int debug = 0;
 
 struct ray {
     vec3 origin;
@@ -82,16 +84,26 @@ float hit(ray r, sphere s) {
     vec3 center = s.center;
     float radius = s.radius;
 
-    vec3 oc = r.origin - center;
+    vec3 oc = center - r.origin ;
     float a = dot(r.direction, r.direction);
-    float b = dot(oc, r.direction);
+    float b = (-2)*dot(oc, r.direction);
     float c = dot(oc, oc) - radius*radius;
     float discriminant = b*b - 4*a*c;
+    if(debug){
+        std::cout << "discriminant" << discriminant << "\n "  ;
+    }
     if (discriminant > 0-eps) {
         float temp = (-b - sqrt(discriminant))/a;
         float temp2 = (-b + sqrt(discriminant)) / a;
-        if (temp + eps > 0 && temp2 + eps > temp){
+        if(debug){
+            std::cout << "temp " << temp << "\n "  ;
+            std::cout << "temp2 " << temp2 << "\n "  ;
+        }
+        if (temp + eps > 0 ){
             return temp;
+        }
+        else if(temp2 + eps > 0){
+            return temp2;
         }
         return -1.0;
     }
@@ -158,33 +170,113 @@ vec3 phong(light l, vec3 point, vec3 normal,sphere s,ray r){
     float surface_alfa = s.surfac.alfa;
     float surface_kr = s.surfac.kr;
     normal = unit_vector(normal);
-    vec3 light_vector = unit_vector(position - point);
+    if(debug){
+        std::cout << "normal  " << normal << "\n "  ;
+    }
+    vec3 light_vector = (position - point);
+    if(debug){
+        std::cout << "light_vector  " << light_vector << "\n "  ;
+    }
+
     float d = sqrt(dot(light_vector,light_vector));
-    float att = 1/(a+b*d+c*d*d) ;
+    if(debug){
+        std::cout << "d  " << d << "\n "  ;
+    }
+
+    float att = 1.0/(a+b*d+c*d*d) ;
+    if(debug){
+        std::cout << "att  " << att << "\n "  ;
+    }
+    
     vec3 ambient_light_color = light_sources[0].rgb;
+    if(debug){
+        std::cout << "ambient_light_color  " << ambient_light_color << "\n "  ;
+    }
+    if(debug){
+        std::cout << "s.pigment  " << s.pigment << "\n "  ;
+    }
+    
     vec3 color_a = surface_ka*vec3(s.pigment[0]*ambient_light_color[0],s.pigment[1]*ambient_light_color[1],s.pigment[2]*ambient_light_color[2]);
+    if(debug){
+        std::cout << "color_a  " << color_a << "\n "  ; 
+    }
+    light_vector = unit_vector(light_vector);
+    if(debug){
+        std::cout << "light_vector  " << light_vector << "\n "  ;
+    }
+    
     float l_n = dot(light_vector,normal);
+    if(debug){
+        std::cout << "l_n  " << l_n << "\n "  ;
+    }
     if(l_n < 0)
         l_n = 0;
-    
+    if(debug){
+        std::cout << "l_n  " << l_n << "\n "  ;
+    }
     vec3 color_d = (l_n*surface_kd*vec3(s.pigment[0]*l.rgb[0],s.pigment[1]*l.rgb[1],s.pigment[2]*l.rgb[2])) / att;
+    if(debug){
+        std::cout << "color_d  " << color_d << "\n "  ;
+    }
     vec3 v = unit_vector(r.origin - point);
+    if(debug){
+        std::cout << "v  " << v << "\n "  ;
+    }
     vec3 h = unit_vector(light_vector + v);
+    if(debug){
+        std::cout << "h  " << h << "\n "  ;
+    }
+    
     float h_n = dot(h,normal);
     if(h_n < 0)
         h_n = 0;
+    if(debug){
+        std::cout << "h_n  " << h_n << "\n "  ;
+    }
     float i_s = pow(h_n,surface_alfa);
+    if(debug){
+        std::cout << "i_s  " << i_s << "\n "  ;
+    }
     vec3 color_s = (i_s*surface_ks*vec3(s.pigment[0]*l.rgb[0],s.pigment[1]*l.rgb[1],s.pigment[2]*l.rgb[2])) / att ;
+    if(debug){
+        std::cout << "color_s  " << color_s << "\n "  ;
+    }
+    if(debug){
+        std::cout << "color_a + color_d + color_s  " << color_a + color_d + color_s << "\n "  ;
+    }
     return color_a + color_d + color_s;
 }
 
 
-bool visible(vec3 P,light l){
+int visible(vec3 P,light l,vec3 normal,int index){
     //dot product of normal and light
+    
+    normal = unit_vector(normal);
     vec3 position = l.position;
-    if (dot(P,position) + eps > 0);  
-        return 1;
-    return 0;
+    vec3 light_vector = unit_vector(position-P);
+    float a  = dot(light_vector,normal)-eps;
+    if(debug){
+        std::cout << "visible_a " << a <<"  " << index << "\n "  ;
+    }
+    if ( a  < 0) {
+        return -1;
+    }
+    ray r;
+
+    r.origin = P;
+    r.direction = light_vector;
+    for(int i = 0; i < number_of_objects; i ++){
+        if(i == index){
+            continue;
+        }
+        sphere s = objects[i];
+        float a = hit(r,s);
+        
+        if(a > 0 ){
+            return -1;
+        }
+    } 
+    return 1;
     
 }
 vec3 color(ray r, int depth) {
@@ -193,26 +285,45 @@ vec3 color(ray r, int depth) {
     for(int i = 0; i < number_of_objects; i ++){
         sphere s = objects[i];
         float a = hit(r,s);
-        if(t>a){
+        if(debug && a > 0){
+            std::cout << "hit " << a << "\n "  ;
+        }
+        if(a > 0 && t>a){
             t = a;
             closest_object_index = i;
         }
+        if(debug && a > 0 ){
+            std::cout << i << "\n"  ;
+        }
     }
-
+    if(closest_object_index == -1){
+        return background_color;
+    }
+    
     vec3 localC = vec3(0.0,0.0,0.0), reflectedC, transmittedC;
     vec3 P; vec3 normal;
     P = r.origin + t*r.direction;
     sphere s = objects[closest_object_index];
     normal = r.origin + t*r.direction-s.center;
+    if(debug){
+        std::cout << "normal " <<normal << "\n "  ;
+    }
+    //ambient
     
     for(int i = 1; i < number_of_light; i++){
+        
         light l = light_sources[i];
-        if (visible(P,l)){
+        if (visible(P,l,normal,closest_object_index) >0){
             localC += phong(l, P, normal,s,r);
-            return localC;
+            
+        }
+        else{
+            l = light_sources[0];
+            localC += phong(l, P, normal,s,r);
         }
         // add reflectivituy
     }
+    return localC;
 }
 
 /*
@@ -233,14 +344,12 @@ vec3 background_color = vec3(0.5,0.5,0.5);
 
 int nx = 1000;
 int ny = 1000;
-vec3 lookfrom(20,9,0);
-vec3 lookat(0,0,-3);
-int aspect = 90;
+vec3 lookfrom(0.0,0.0,0.0);
+vec3 lookat(0,0,-1);
+vec3 up(0.0,1.0,0.0);
+int fovy = 90;
 
 void init_scene() {
-    std::cout << "Hello World!\n";
-    std::cout << "I am learning C++\n";
-    
     number_of_light = 3;
     /*for(int i=0;i < number_of_light; i++){
         light l;
@@ -256,12 +365,12 @@ void init_scene() {
     l.attenuation = vec3(1,0,0);
     light_sources[0] = l;
 
-    l.position = vec3(0,0,0);
+    l.position = vec3(10,100,10);
     l.rgb = vec3(1,1,1);
     l.attenuation = vec3(1,0,0);
     light_sources[1] = l;
 
-    l.position = vec3(0,0,0);
+    l.position = vec3(100,100,100);
     l.rgb = vec3(1,1,1);
     l.attenuation = vec3(1,0,0);
     light_sources[2] = l;
@@ -274,7 +383,9 @@ void init_scene() {
     pigments[0] = vec3(1.0,0.0,0.0);
     pigments[1] = vec3(0.0,1.0,0.0);
     pigments[2] = vec3(0.0,0.0,1.0);
-
+    if(debug){
+                std::cout << "pigments" << "\n" << pigments[0] << "\n "  ;
+        }
 
     /*
     number_of_surface = 2;
@@ -330,57 +441,74 @@ void init_scene() {
         objects[i];
     } */
     sphere sp;
-    sp.center = vec3();
+    sp.center = vec3(1,0,-8);
+    
     sp.pigment = pigments[1];
     sp.surfac = surfaces[0];
-    sp.radius = 3.0;
-    objects[0];
+    sp.radius = 2;
+    objects[0] = sp;
     
-    sp.center = vec3();
+    sp.center = vec3(3,5,-10);
     sp.pigment = pigments[0];
     sp.surfac = surfaces[1];
     sp.radius = 3.0;
-    objects[1];
+    objects[1] = sp;
 
-    sp.center = vec3();
+    sp.center = vec3(10,-5,-25);
     sp.pigment = pigments[2];
     sp.surfac = surfaces[1];
-    sp.radius = 3.0;
-    objects[2];
+    sp.radius = 10.0;
+    objects[2] = sp;
 
-    sp.center = vec3();
+    sp.center = vec3(-10,0,-25);
     sp.pigment = pigments[2];
     sp.surfac = surfaces[1];
-    sp.radius = 3.0;
-    objects[3];
-    std::cout << "I am learning C++\n";
+    sp.radius = 10.0;
+    objects[3]= sp;
 
+    
+    
+
+     
+    
 }
 
-
 int main() {
-    
+    debug = 1;
     int ns = 10;
     //std::cout << "P3\n" << nx << " " << ny << "\n255\n";
+    //init();
     init_scene();
 
-    camera cam(lookfrom, lookat, vec3(0,1,0), aspect, float(nx)/float(ny));
+    camera cam(lookfrom, lookat, up, fovy, float(nx)/float(ny));
 
     for (int j = ny-1; j >= 0; j--) {
         for (int i = 0; i < nx; i++) {
             vec3 col(0, 0, 0);
-            for (int s=0; s < ns; s++) {
-                float u = float(i) / float(nx);
-                float v = float(j) / float(ny);
-                ray r = cam.get_ray(u, v);
-                col += color(r,0);
+            
+            float u = float(i) / float(nx);
+            float v = float(j) / float(ny);
+            if(debug){
+                u = float(500) / float(nx);
+                v = float(500) / float(ny);
             }
-            col /= float(ns);
-            col = vec3( sqrt(col[0]), sqrt(col[1]), sqrt(col[2]) );
+            
+            ray r = cam.get_ray(u, v);
+            if(debug){
+                std::cout << r.direction << "\n" << r.origin << "\n "  ;
+            }
+                
+            col = color(r,0);
+            //col /= float(ns);
+            //col = vec3( sqrt(col[0]), sqrt(col[1]), sqrt(col[2]) );
+            
             int ir = int(255.99*col[0]);
             int ig = int(255.99*col[1]);
             int ib = int(255.99*col[2]);
             std::cout << ir << " " << ig << " " << ib << "\n";
+            if(debug){
+                exit(0);
+            }
         }
     }
 }
