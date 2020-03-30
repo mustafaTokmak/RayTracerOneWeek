@@ -473,12 +473,279 @@ void init_scene() {
     
 }
 
+void init(){
+    std::string output_file_name;
+    std::ifstream in("test.txt");
+
+    
+    if(!in) {
+        std::cout << "Cannot open input file.\n";
+        exit(0);
+    }
+    char str[255];
+
+
+    int a = 0;
+    in.getline(str, 255);  // delim defaults to '\n'
+        
+    if(in) {
+        output_file_name = str;
+        if(debug)
+            std::cout << output_file_name << " \n" ;
+        
+        
+        
+        
+        in.getline(str, 255);
+
+        char * token = strtok(str, " ");
+        nx = atof(token);
+        if( token != NULL ) {
+            token = strtok(NULL, " ");
+            ny = atof(token);
+        }
+        if(debug)
+            std::cout << "nx,ny  " << nx << " " << ny << "\n";
+        
+        
+        in.getline(str, 255);
+        float x,y,z;
+        token = strtok(str, " ");
+        x = atof(token);
+        if( token != NULL ) {
+            token = strtok(NULL, " ");
+            y = atof(token);
+        }    
+        if( token != NULL ) {
+            token = strtok(NULL, " ");
+            z = atof(token);
+        }   
+        lookfrom = vec3(x,y,z);
+        if(debug)
+            std::cout << "lookfrom " << lookfrom << "\n";
+
+        in.getline(str, 255);
+        token = strtok(str, " ");
+        x = atof(token);
+        if( token != NULL ) {
+            token = strtok(NULL, " ");
+            y = atof(token);
+        }    
+        if( token != NULL ) {
+            token = strtok(NULL, " ");
+            z = atof(token);
+        }   
+        lookat = vec3(x,y,z);
+        if(debug)
+            std::cout << "lookat " << lookat << "\n";
+        
+        in.getline(str, 255);
+        token = strtok(str, " ");
+        x = atof(token);
+        if( token != NULL ) {
+            token = strtok(NULL, " ");
+            y = atof(token);
+        }    
+        if( token != NULL ) {
+            token = strtok(NULL, " ");
+            z = atof(token);
+        }   
+        up = vec3(x,y,z);
+        if(debug)
+            std::cout << "up " << up << "\n";
+        
+        in.getline(str, 255);
+        token = strtok(str, " ");
+        fovy = atof(token);
+
+        in.getline(str, 255);
+        token = strtok(str, " ");
+        number_of_light = atof(token);
+        if(debug)
+            std::cout << "number_of_light " << number_of_light << "\n";
+        float r,g,b;
+        float a,d,c;
+        light l;
+        for(int i=0;i < number_of_light; i++){
+            in.getline(str, 255);
+            token = strtok(str, " ");
+            x = atof(token);
+            if( token != NULL ) {
+                token = strtok(NULL, " ");
+                y = atof(token);
+            }    
+            if( token != NULL ) {
+                token = strtok(NULL, " ");
+                z = atof(token);
+            }   
+            vec3 position = vec3(x,y,z);
+            if(debug)
+                std::cout << "pos " << position << "\n";   
+            if( token != NULL ) {
+                token = strtok(NULL, " ");
+                r = atof(token);
+            }
+            if( token != NULL ) {
+                token = strtok(NULL, " ");
+                g = atof(token);
+            }    
+            if( token != NULL ) {
+                token = strtok(NULL, " ");
+                b = atof(token);
+            }   
+
+            vec3 rgb = vec3(r,g,b);
+            if(debug)
+                std::cout << "rgb " << rgb << "\n";   
+            if( token != NULL ) {
+                token = strtok(NULL, " ");
+                a = atof(token);
+            }
+            if( token != NULL ) {
+                token = strtok(NULL, " ");
+                d = atof(token);
+            }    
+            if( token != NULL ) {
+                token = strtok(NULL, " ");
+                c = atof(token);
+            }
+            vec3 attenuation = vec3(a,d,c);
+            if(debug)
+                std::cout << "att " << attenuation << "\n";  
+            l.position = position;
+            l.rgb = rgb;
+            l.attenuation = attenuation;
+            light_sources[i] = l;
+        }
+        in.getline(str, 255);
+        token = strtok(str, " ");
+        number_of_pigments = atof(token);
+        if(debug)
+            std::cout << "number_of_pigments " << number_of_pigments << "\n";
+        for(int i=0;i < number_of_pigments; i++){
+            in.getline(str, 255);
+            token = strtok(str, " ");
+            x = atof(token);
+            if( token != NULL ) {
+                token = strtok(NULL, " ");
+                r = atof(token);
+            }    
+            if( token != NULL ) {
+                token = strtok(NULL, " ");
+                g = atof(token);
+            }   
+            if( token != NULL ) {
+                token = strtok(NULL, " ");
+                b = atof(token);
+            }  
+            vec3 rgb = vec3(r,g,b);
+            pigments[i] = rgb;
+            if(debug)
+                std::cout << "rgb " << rgb << "\n";    
+        }
+        in.getline(str, 255);
+        token = strtok(str, " ");
+        number_of_surface = atof(token);
+        if(debug)
+            std::cout << "number_of_surface " << number_of_surface << "\n";
+        float ka,kd,ks,alfa,kr;
+        surface s ;
+        for(int i=0;i < number_of_surface; i++){
+            in.getline(str, 255);
+            token = strtok(str, " ");
+            ka = atof(token);
+            if( token != NULL ) {
+                token = strtok(NULL, " ");
+                kd = atof(token);
+            }    
+            if( token != NULL ) {
+                token = strtok(NULL, " ");
+                ks = atof(token);
+            }   
+            if( token != NULL ) {
+                token = strtok(NULL, " ");
+                alfa = atof(token);
+            }  
+            if( token != NULL ) {
+                token = strtok(NULL, " ");
+                kr = atof(token);
+            }
+            s.ka = ka;
+            s.kd = kd;
+            s.ks = ks;
+            s.alfa = alfa;
+            s.kr = kr;
+            surfaces[i] = s;
+            if(debug)
+                std::cout << "surface " << s.ks << "\n";    
+        }
+        float radius;
+        int p_index,s_index;
+        vec3 center;
+        sphere sph;
+        in.getline(str, 255);
+        token = strtok(str, " ");
+        number_of_objects = atof(token);
+        if(debug)
+            std::cout << "number_of_surface " << number_of_objects << "\n";
+        for(int i=0;i < number_of_objects; i++){
+            in.getline(str, 255);
+            token = strtok(str, " ");
+            p_index = atof(token);
+            if( token != NULL ) {
+                token = strtok(NULL, " ");
+                s_index = atof(token);
+            }    
+            if( token != NULL ) {
+                token = strtok(NULL, " ");
+            }   
+            if( token != NULL ) {
+                token = strtok(NULL, " ");
+                x = atof(token);
+            }  
+            if( token != NULL ) {
+                token = strtok(NULL, " ");
+                y = atof(token);
+            }
+            if( token != NULL ) {
+                token = strtok(NULL, " ");
+                z = atof(token);
+            }
+            center = vec3(x,y,z);
+            if(debug)
+                std::cout << "center " << center << "\n";
+
+            if( token != NULL ) {
+                token = strtok(NULL, " ");
+                radius = atof(token);
+            }
+            sph.pigment = pigments[p_index];
+            sph.surfac = surfaces[s_index];
+            sph.center = center;
+            objects[i] = sph;
+            
+        }
+        
+
+
+
+
+
+        in.close();
+    }  
+    
+
+    
+    
+
+}
 int main() {
-    debug = 1;
+    debug = 0;
     int ns = 10;
-    //std::cout << "P3\n" << nx << " " << ny << "\n255\n";
-    //init();
-    init_scene();
+    init();
+    std::cout << "P3\n" << nx << " " << ny << "\n255\n";
+    
+    //init_scene();
 
     camera cam(lookfrom, lookat, up, fovy, float(nx)/float(ny));
 
